@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <avr/sleep.h>
+static String nodeID = "node01";
 
 void AVRsleep()
 {
@@ -24,7 +25,6 @@ String readAltSerial()
         return str;
 }
 
-extern String nodeID;
 void mqttpub(String channel, String msg)
 {
         Serial.println("PUB,/from/" + nodeID + "/" + channel + "," + msg);
