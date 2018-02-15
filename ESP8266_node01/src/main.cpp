@@ -1,17 +1,10 @@
 #include <Arduino.h>
 
-// This example uses an Adafruit Huzzah ESP8266
-// to connect to shiftr.io.
-//
-// You can check on your device after a successful
-// connection here: https://shiftr.io/try.
-//
-// by Joël Gähwiler
-// https://github.com/256dpi/arduino-mqtt
-
 #include <ESP8266WiFi.h>
 #include <MQTTClient.h>
 //#include <everytime.h>
+
+//#define DEBUG
 
 const char ssid[] = "Nexus";
 const char pass[] = "Nexus1024";
@@ -23,43 +16,116 @@ int count = 0;
 char data[64];
 String str;
 
+//char* valPosition;
+//int i = 0;
+//String token[3];
+
 char* valPosition;
-int i = 0;
 String token[3];
+const byte numChars = 64;
+char receivedChars[numChars];   // an array to store the received data
+boolean newData = false;
+boolean newToken = false;
+
+//------------------------------------functions begin---------------------------------------//
 
 void connect() {
         int rst = 0;
+        #ifdef DEBUG
         Serial.print("checking wifi...");
+        #endif
         while (WiFi.status() != WL_CONNECTED) {
                 Serial.print(".");
-                delay(1000);
+                delay(500);
                 rst++;
-                if (rst >= 20)
+                if (rst >= 40)
                         ESP.restart();
         }
         rst = 0;
+        #ifdef DEBUG
         Serial.print("\nconnecting...");
+        #endif
         while (!client.connect("node01", "nexus", "letmein")) {
                 Serial.print(".");
-                delay(1000);
+                delay(100);
                 rst++;
-                if (rst >= 20)
+                if (rst >= 40)
                         ESP.restart();
         }
         rst = 0;
+
+        #ifdef DEBUG
         Serial.println("\nconnected!");
+        #endif
 
         client.subscribe("/to/node01/+", 1);
-
-        // client.unsubscribe("/hello");
         client.publish("/from/node01/status", "ONLINE", 0, 1);
 }
 
 void messageReceived(String &topic, String &payload) {
-        Serial.print("CMD," + topic + "," + payload);
+        Serial.print("<CMD;" + topic + ";" + payload+ ">");
         if (payload == "RST")
                 ESP.restart();
 }
+
+void recvWithStartEndMarkers() {
+        static boolean recvInProgress = false;
+        static byte ndx = 0;
+        char startMarker = '<';
+        char endMarker = '>';
+        char rc;
+
+        while (Serial.available() > 0 && newData == false) {
+                rc = Serial.read();
+
+                if (recvInProgress == true) {
+                        if (rc != endMarker) {
+                                receivedChars[ndx] = rc;
+                                ndx++;
+                                if (ndx >= numChars) {
+                                        ndx = numChars - 1;
+                                }
+                        }
+                        else {
+                                receivedChars[ndx] = '\0'; // terminate the string
+                                recvInProgress = false;
+                                ndx = 0;
+                                newData = true;
+                        }
+                }
+
+                else if (rc == startMarker) {
+                        recvInProgress = true;
+                }
+        }
+}
+
+void processNewData() {
+        if (newData == true) {
+                #ifdef DEBUG
+                Serial.print ("\nReceived: ");
+                Serial.println(receivedChars);
+                #endif
+                newData = false;
+                int i = 0;
+                valPosition = strtok(receivedChars, ";");
+                while (valPosition != NULL) {
+                        //Serial.println(valPosition);
+                        token[i] = (valPosition);
+                        i++;
+                        //Here we pass in a NULL value, which tells strtok to continue working with the previous string
+                        valPosition = strtok(NULL, ";");
+                }
+                #ifdef DEBUG
+                Serial.println(token[0]);
+                Serial.println(token[1]);
+                Serial.println(token[2]);
+                #endif
+                newToken = true;
+        }
+}
+
+//------------------------------------functions end---------------------------------------//
 
 void setup() {
         Serial.begin(19200);
@@ -67,9 +133,6 @@ void setup() {
         //  ; // wait for serial port to connect. Needed for native USB port only
         //}
         WiFi.begin(ssid, pass);
-
-        // Note: Local domain names (e.g. "Computer.local" on OSX) are not supported by Arduino.
-        // You need to set the IP address directly.
         client.begin("192.168.1.97", net);
         client.setOptions(10, 1, 2500);
         client.onMessage(messageReceived);
@@ -79,42 +142,19 @@ void setup() {
 }
 
 void loop() {
+
         client.loop();
         delay(10); // <- fixes some issues with WiFi stability
         if (!client.connected()) {
                 connect();
         }
 
-        if (Serial.available()) {
-                //Serial.println("ESP8266 - New command, collecting...");
-                delay(10);
-                count = 0;
-                for ( int i = 0; i < sizeof(data); ++i )
-                        data[i] = (char)0;
-                //delay(10);
-                while (Serial.available()) {
-                        char character = Serial.read();
-                        data[count] = character;
-                        count++;
-                }
-                //Serial.print("ESP8266 - Command received: ");
-                //Serial.println(data);
-                str = String(data);
-                //Serial.print("Tokenizing: ");
-                //Serial.println(str);
-                //delay(10);
+        recvWithStartEndMarkers();
+        processNewData();
 
-                valPosition = strtok(data, ",");
-                while (valPosition != NULL) {
-                        //Serial.println(valPosition);
-                        token[i] = (valPosition);
-                        i++;
-                        //Here we pass in a NULL value, which tells strtok to continue working with the previous string
-                        valPosition = strtok(NULL, ",");
-                }
-                //Serial.println(token[0]);
-                //Serial.println(token[1]);
-                //Serial.println(token[2]);
+        if (newToken) {
+                if (token[0] == "PUB")
+                        client.publish(token[1], token[2], 0, 1);
                 if (token[0] == "PUB")
                         client.publish(token[1], token[2], 0, 1);
                 if (token[0] == "SUB")
@@ -128,11 +168,8 @@ void loop() {
                 if (token[0] == "RST")
                         ESP.restart();
 
-                token[0] = "";
-                token[1] = "";
-                token[2] = "";
-                str = ("");
-                i = 0;
-        } //serial available
-
+                for ( int i = 0; i < 3; ++i )
+                        token[i] = "";
+                newToken = false;
+        }
 } //loop

@@ -5,6 +5,8 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #define ONE_WIRE_BUS 2
+//#define DEBUG
+
 //#include <SPI.h>
 //#include <printf.h>
 //#include <stdlib.h>
@@ -18,7 +20,7 @@ DeviceAddress tempDeviceAddress;
 String dstemp = "n/a";
 
 char* valPosition;
-String token[4];
+String token[5];
 const byte numChars = 64;
 char receivedChars[numChars];   // an array to store the received data
 boolean newData = false;
@@ -28,7 +30,7 @@ unsigned long previousMillis = 0;
 
 static String nodeID = "node01";
 
-//------------------------------------functions begin---------------------------------------///
+//------------------------------------functions begin---------------------------------------//
 
 void AVRsleep()
 {
@@ -74,29 +76,34 @@ void recvWithStartEndMarkers() {
 
 void processNewData() {
         if (newData == true) {
-                Serial.print("This just in ... ");
+                #ifdef DEBUG
+                Serial.print ("\nReceived: ");
                 Serial.println(receivedChars);
+                #endif
                 newData = false;
                 int i = 0;
-                valPosition = strtok(receivedChars, ",;/");
+                valPosition = strtok(receivedChars, ";/");
                 while (valPosition != NULL) {
                         //Serial.println(valPosition);
                         token[i] = (valPosition);
                         i++;
                         //Here we pass in a NULL value, which tells strtok to continue working with the previous string
-                        valPosition = strtok(NULL, ",;/");
+                        valPosition = strtok(NULL, ";/");
                 }
+                #ifdef DEBUG
                 Serial.println(token[0]);
                 Serial.println(token[1]);
                 Serial.println(token[2]);
                 Serial.println(token[3]);
+                Serial.println(token[4]);
+                #endif
                 newToken = true;
         }
 }
 
 void mqttpub(String channel, String msg)
 {
-        Serial.println("PUB,/from/" + nodeID + "/" + channel + "," + msg);
+        Serial.print("<PUB;/from/" + nodeID + "/" + channel + ";" + msg + ">");
         //altSerial.print("PUB,/from/" + nodeID + "/" + channel + "," + msg);
 }
 
@@ -107,18 +114,18 @@ String FloatToString(float value)
         return str;
 }
 
-//------------------------------------functions end---------------------------------------///
+//------------------------------------functions end---------------------------------------//
 
 String readDS()
 {
-        digitalWrite(LED_BUILTIN, 1);
+        //digitalWrite(LED_BUILTIN, 1);
         sensors.requestTemperatures();
         float tempC = 0;
         tempC = sensors.getTempC(tempDeviceAddress);
         char buffer[10];
         String str = dtostrf(tempC, 5, 2, buffer);
         if ((tempC > 60) or (tempC < 0)) str = "n/a";
-        digitalWrite(LED_BUILTIN, 0);
+        //digitalWrite(LED_BUILTIN, 0);
         return str;
 }
 
@@ -137,14 +144,14 @@ void setup() {
 }
 
 void loop() {
-
         wdt_reset();
+
         unsigned long currentMillis = millis();
         if ((unsigned long)(currentMillis - previousMillis) >= 42000) {
                 //Serial.println("Sending reset...");
-                Serial.println("PUB,/from/" + nodeID + "/status,RESET");
+                mqttpub("status", "RESET");
                 delay(250);
-                Serial.println("RST,,");
+                Serial.println("<RST>");
                 previousMillis = currentMillis;
         }
 
@@ -154,9 +161,12 @@ void loop() {
         processNewData();
 
         if (newToken) {
-                newToken = false;
                 if (token[3] == "tmp1") mqttpub("tmp1", dstemp);
                 if (token[0] == "CMD") previousMillis = currentMillis;
+
+                for ( int i = 0; i < 5; ++i )
+                        token[i] = "";
+                newToken = false;
         }
 
         AVRsleep();
