@@ -49,7 +49,7 @@ String armstate = "n/a";
 
 void mqttpub(String channel, String msg)
 {
-  delay(25);
+        delay(25);
         Serial1.println("PUB,/from/" + nodeID + "/" + channel + "," + msg);
         //altSerial.print("PUB,/from/" + nodeID + "/" + channel + "," + msg);
 }
@@ -104,6 +104,7 @@ String readAltSerial()
 
 void setup(void) {
         wdt_disable();
+        pinMode(LED_BUILTIN, OUTPUT);
         pinMode(22, OUTPUT);
         pinMode(24, OUTPUT);
         pinMode(23, INPUT);
@@ -134,6 +135,7 @@ void setup(void) {
 }
 
 void loop(void) {
+        digitalWrite(LED_BUILTIN, 0);
         wdt_reset();
         unsigned long currentMillis = millis();
         if ((unsigned long)(currentMillis - previousMillis) >= 42000) {
@@ -205,23 +207,29 @@ void loop(void) {
 
                 if (rxstr.substring(15, 19) == "tmp1")
                 {
+                        digitalWrite(LED_BUILTIN, 1);
                         float temperature = dht.getTemperature();
                         temp = FloatToString (temperature-1);
                         mqttpub("tmp1", temp);
+                        digitalWrite(LED_BUILTIN, 0);
                 }
 
                 if (rxstr.substring(15, 19) == "hum1")
                 {
+                        digitalWrite(LED_BUILTIN, 1);
                         hum = FloatToString (dht.getHumidity());
                         mqttpub("hum1", hum);
+                        digitalWrite(LED_BUILTIN, 0);
                 }
 
                 if (rxstr.substring(15, 19) == "dht1")
                 {
+                        digitalWrite(LED_BUILTIN, 1);
                         float temperature = dht.getTemperature();
                         temp = FloatToString (temperature-1);
                         hum = FloatToString (dht.getHumidity());
                         mqttpub("dht1", temp + ";" + hum);
+                        digitalWrite(LED_BUILTIN, 0);
                 }
 
                 if (rxstr.substring(15, 19) == "arms")
@@ -239,7 +247,6 @@ void loop(void) {
                 {
                         previousMillis = currentMillis;
                 }
-
         }
 
 }
