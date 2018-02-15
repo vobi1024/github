@@ -1,5 +1,10 @@
 #include <Arduino.h>
-
+#include <avr/sleep.h>
+#include <avr/wdt.h>
+#include <everytime.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#define ONE_WIRE_BUS 2
 //#include <SPI.h>
 //#include <printf.h>
 //#include <stdlib.h>
@@ -7,26 +12,102 @@
 //#include <AltSoftSerial.h>
 //AltSoftSerial altSerial;
 
-#include <OneWire.h>
-#include <DallasTemperature.h>
-#define ONE_WIRE_BUS 2
-
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 DeviceAddress tempDeviceAddress;
+String dstemp = "n/a";
 
-#include <avr/wdt.h>
-#include <everytime.h>
+char* valPosition;
+String token[4];
+const byte numChars = 64;
+char receivedChars[numChars];   // an array to store the received data
+boolean newData = false;
+boolean newToken = false;
 
 unsigned long previousMillis = 0;
 
 static String nodeID = "node01";
 
-extern String readAltSerial();
-extern void mqttpub(String channel, String msg);
-extern String FloatToString(float value);
+//------------------------------------functions begin---------------------------------------///
 
-String dstemp = "n/a";
+void AVRsleep()
+{
+        digitalWrite(LED_BUILTIN, 0);
+        set_sleep_mode(SLEEP_MODE_IDLE); //sleeps for the rest of this millisecond or less if other trigger
+        sleep_enable();
+        sleep_mode();     // put the device to sleep
+        sleep_disable();
+        digitalWrite(LED_BUILTIN, 1);
+}
+
+void recvWithStartEndMarkers() {
+        static boolean recvInProgress = false;
+        static byte ndx = 0;
+        char startMarker = '<';
+        char endMarker = '>';
+        char rc;
+
+        while (Serial.available() > 0 && newData == false) {
+                rc = Serial.read();
+
+                if (recvInProgress == true) {
+                        if (rc != endMarker) {
+                                receivedChars[ndx] = rc;
+                                ndx++;
+                                if (ndx >= numChars) {
+                                        ndx = numChars - 1;
+                                }
+                        }
+                        else {
+                                receivedChars[ndx] = '\0'; // terminate the string
+                                recvInProgress = false;
+                                ndx = 0;
+                                newData = true;
+                        }
+                }
+
+                else if (rc == startMarker) {
+                        recvInProgress = true;
+                }
+        }
+}
+
+void processNewData() {
+        if (newData == true) {
+                Serial.print("This just in ... ");
+                Serial.println(receivedChars);
+                newData = false;
+                int i = 0;
+                valPosition = strtok(receivedChars, ",;/");
+                while (valPosition != NULL) {
+                        //Serial.println(valPosition);
+                        token[i] = (valPosition);
+                        i++;
+                        //Here we pass in a NULL value, which tells strtok to continue working with the previous string
+                        valPosition = strtok(NULL, ",;/");
+                }
+                Serial.println(token[0]);
+                Serial.println(token[1]);
+                Serial.println(token[2]);
+                Serial.println(token[3]);
+                newToken = true;
+        }
+}
+
+void mqttpub(String channel, String msg)
+{
+        Serial.println("PUB,/from/" + nodeID + "/" + channel + "," + msg);
+        //altSerial.print("PUB,/from/" + nodeID + "/" + channel + "," + msg);
+}
+
+String FloatToString(float value)
+{
+        char buffer[10];
+        String str = dtostrf(value, 5, 2, buffer);
+        return str;
+}
+
+//------------------------------------functions end---------------------------------------///
 
 String readDS()
 {
@@ -45,13 +126,12 @@ void setup() {
         wdt_disable();
         pinMode(LED_BUILTIN, OUTPUT);
         Serial.begin(19200);
+
         sensors.begin();
         sensors.getAddress(tempDeviceAddress, 0);
         sensors.setResolution(tempDeviceAddress, 10);
         sensors.setWaitForConversion(false);
-        //while (!Serial) ; // wait for Arduino Serial Monitor to open
-        //Serial.println("AltSoftSerial Test Begin");
-        //  altSerial.begin(19200);
+
         wdt_enable(WDTO_4S);
         mqttpub("status", "Arduino 01 online");
 }
@@ -70,18 +150,14 @@ void loop() {
 
         every(10000) dstemp = readDS();
 
-        if (Serial.available()) {
-                String rxstr = readAltSerial();
+        recvWithStartEndMarkers();
+        processNewData();
 
-                if (rxstr.substring(15, 19) == "tmp1")
-                {
-                        mqttpub("tmp1", dstemp);
-                }
+        if (newToken) {
+                newToken = false;
+                if (token[3] == "tmp1") mqttpub("tmp1", dstemp);
+                if (token[0] == "CMD") previousMillis = currentMillis;
+        }
 
-                if (rxstr.substring(0, 3) == "CMD")
-                {
-                        previousMillis = currentMillis;
-                }
-        } //incoming msg end
-        // AVRsleep();
+        AVRsleep();
 } //loop
