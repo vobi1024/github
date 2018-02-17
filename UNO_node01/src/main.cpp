@@ -103,6 +103,7 @@ void mqttConnected(void* response) {
         //mqtt.subscribe("/esp-link/2", 1);
         //mqtt.publish("/esp-link/0", "test1");
         connected = true;
+        mqtt.publish("/from/node01e/status", "START");
 }
 
 // Callback when MQTT is disconnected
@@ -192,6 +193,8 @@ void loop() {
                 if (topic.substring(12, 16) == "tmp1")
                 {
                         mqtt.publish("/from/node01e/tmp1", dstemp);
+                        Serial.print("MQTT published: ");
+                        Serial.println(dstemp);
                 }
                 //
                 // if (rxstr.substring(0, 3) == "CMD")
