@@ -28,6 +28,10 @@ static String nodeID = "node01";
 
 char dstemp[18] = "n/a";
 
+bool newData = 0;
+String topic = "";
+String data = "";
+
 // void AVRsleep()
 // {
 //         digitalWrite(LED_BUILTIN, 0);
@@ -38,33 +42,12 @@ char dstemp[18] = "n/a";
 //         digitalWrite(LED_BUILTIN, 1);
 // }
 
-// String readAltSerial()
-// {
-//         delay(10);
-//         char c;
-//         String str = "";
-//         while (Serial.available() > 0) {
-//                 c = Serial.read();
-//                 //Serial.print(c);
-//                 str += c;
-//         }
-//         return str;
-// }
-
-// void mqttpub(String channel, String msg)
-// {
-//         Serial.println("PUB,/from/" + nodeID + "/" + channel + "," + msg);
-//         //altSerial.print("PUB,/from/" + nodeID + "/" + channel + "," + msg);
-// }
-
 String FloatToString(float value)
 {
         char buffer[10];
         String str = dtostrf(value, 5, 2, buffer);
         return str;
 }
-
-
 
 String readDS()
 {
@@ -115,8 +98,8 @@ bool connected;
 // Callback when MQTT is connected
 void mqttConnected(void* response) {
         Serial.println("MQTT connected!");
-        mqtt.subscribe("/esp-link/1");
-        mqtt.subscribe("/hello/world/#");
+        mqtt.subscribe("/to/node01e/#");
+        //mqtt.subscribe("/hello/world/#");
         //mqtt.subscribe("/esp-link/2", 1);
         //mqtt.publish("/esp-link/0", "test1");
         connected = true;
@@ -133,12 +116,13 @@ void mqttData(void* response) {
         ELClientResponse *res = (ELClientResponse *)response;
 
         Serial.print("Received: topic=");
-        String topic = res->popString();
+        topic = res->popString();
         Serial.println(topic);
 
         Serial.print("data=");
-        String data = res->popString();
+        data = res->popString();
         Serial.println(data);
+        newData = 1;
 }
 
 void mqttPublished(void* response) {
@@ -198,29 +182,23 @@ void loop() {
 
         every(10000)
         {
-                //dstemp[10] = readDS();
                 readDS().toCharArray(dstemp, 18);
-                Serial.print("dstemp var: ");
-                Serial.println(dstemp);
-                Serial.print("readds func: ");
-                Serial.println(readDS());
-                readDS().toCharArray(dstemp, 18);
-                mqtt.publish("/from/node01e/tmp1", dstemp);
+                //Serial.print("dstemp: ");
+                //Serial.println(dstemp);
         }
 
-        // if (Serial.available()) {
-        //         //String rxstr = readAltSerial();
-        //
-        //         if (rxstr.substring(15, 19) == "tmp1")
-        //         {
-        //           mqtt.publish("/from/node01/tmp1", dstemp);
-        //                 //mqttpub("tmp1", dstemp);
-        //         }
-        //
-        //         if (rxstr.substring(0, 3) == "CMD")
-        //         {
-        //                 //previousMillis = currentMillis;
-        //         }
-        // } //incoming msg end
-        // AVRsleep();
+        if (newData) {
+                //String rxstr = readAltSerial();
+                if (topic.substring(12, 16) == "tmp1")
+                {
+                        mqtt.publish("/from/node01e/tmp1", dstemp);
+                }
+                //
+                // if (rxstr.substring(0, 3) == "CMD")
+                // {
+                //         //previousMillis = currentMillis;
+                // }
+                newData = 0;
+        } //incoming msg end
+          // AVRsleep();
 } //loop
