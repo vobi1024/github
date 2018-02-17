@@ -103,7 +103,7 @@ void mqttConnected(void* response) {
         //mqtt.subscribe("/esp-link/2", 1);
         //mqtt.publish("/esp-link/0", "test1");
         connected = true;
-        mqtt.publish("/from/node01e/status", "START");
+        mqtt.publish("/from/node01e/status", "START", 1);
 }
 
 // Callback when MQTT is disconnected
