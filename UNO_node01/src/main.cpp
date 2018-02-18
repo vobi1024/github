@@ -35,14 +35,14 @@ String data = "";
 
 void AVRsleep()
 {
-        digitalWrite(LED_BUILTIN, 0);
+        //digitalWrite(LED_BUILTIN, 0);
         set_sleep_mode(SLEEP_MODE_IDLE); //sleeps for the rest of this millisecond or less if other trigger
         sleep_enable();
         MCUCR |= (1<<BODS) | (1<<BODSE);
         MCUCR &= ~(1<<BODSE); // must be done right before sleep
         sleep_mode();     // put the device to sleep
         sleep_disable();
-        digitalWrite(LED_BUILTIN, 1);
+        //digitalWrite(LED_BUILTIN, 1);
 }
 
 String FloatToString(float value)
@@ -54,7 +54,7 @@ String FloatToString(float value)
 
 String readDS()
 {
-        // digitalWrite(LED_BUILTIN, 1);
+        digitalWrite(LED_BUILTIN, 1);
         sensors.requestTemperatures();
         float tempC = 0;
         //Serial.println(sensors.getTempCByIndex(0));
@@ -63,7 +63,7 @@ String readDS()
         char buffer[10];
         String str = dtostrf(tempC, 5, 2, buffer);
         if ((tempC > 60) or (tempC < 0)) str = "n/a";
-        // digitalWrite(LED_BUILTIN, 0);
+        digitalWrite(LED_BUILTIN, 0);
         return str;
         //tem = ("Node01,tmp1,0," + tem + "\n");
         //tem.toCharArray(temper, 32);
