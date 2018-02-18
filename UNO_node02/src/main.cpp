@@ -6,16 +6,16 @@
 //#include <AltSoftSerial.h>
 //AltSoftSerial altSerial;
 
-//#include <avr/sleep.h>
-// void AVRsleep()
-// {
-//         digitalWrite(LED_BUILTIN, 0);
-//         set_sleep_mode(SLEEP_MODE_IDLE); //sleeps for the rest of this millisecond or less if other trigger
-//         sleep_enable();
-//         sleep_mode();     // put the device to sleep
-//         sleep_disable();
-//         digitalWrite(LED_BUILTIN, 1);
-// }
+#include <avr/sleep.h>
+void AVRsleep()
+{
+        digitalWrite(LED_BUILTIN, 0);
+        set_sleep_mode(SLEEP_MODE_IDLE); //sleeps for the rest of this millisecond or less if other trigger
+        sleep_enable();
+        sleep_mode();     // put the device to sleep
+        sleep_disable();
+        digitalWrite(LED_BUILTIN, 1);
+}
 
 #include "DHT.h"
 DHT dht;
@@ -162,12 +162,12 @@ void loop() {
         // }
 
         every(15000) {
-                digitalWrite(LED_BUILTIN, 1);
+                //digitalWrite(LED_BUILTIN, 1);
                 temp = FloatToString (dht.getTemperature());
                 temp.toCharArray(tempa, 18);
                 hum = FloatToString (dht.getHumidity());
                 hum.toCharArray(huma, 18);
-                digitalWrite(LED_BUILTIN, 0);
+                //digitalWrite(LED_BUILTIN, 0);
         }
 
 
@@ -212,5 +212,5 @@ void loop() {
         //         }
         //
         // } // Serial available end
-        // AVRsleep();
+        AVRsleep();
 } //loop
