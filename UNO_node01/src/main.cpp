@@ -21,6 +21,7 @@ DeviceAddress tempDeviceAddress;
 #include <ELClientCmd.h>
 #include <ELClientMqtt.h>
 #include <avr/sleep.h>
+#include <avr/power.h>
 
 //unsigned long previousMillis = 0;
 
@@ -37,6 +38,8 @@ void AVRsleep()
         digitalWrite(LED_BUILTIN, 0);
         set_sleep_mode(SLEEP_MODE_IDLE); //sleeps for the rest of this millisecond or less if other trigger
         sleep_enable();
+        MCUCR |= (1<<BODS) | (1<<BODSE);
+        MCUCR &= ~(1<<BODSE); // must be done right before sleep
         sleep_mode();     // put the device to sleep
         sleep_disable();
         digitalWrite(LED_BUILTIN, 1);
@@ -98,7 +101,7 @@ bool connected;
 // Callback when MQTT is connected
 void mqttConnected(void* response) {
         Serial.println("MQTT connected!");
-        mqtt.subscribe("/to/node01e/#");
+        mqtt.subscribe("/to/node01e/#", 1);
         //mqtt.subscribe("/hello/world/#");
         //mqtt.subscribe("/esp-link/2", 1);
         //mqtt.publish("/esp-link/0", "test1");
@@ -131,6 +134,8 @@ void mqttPublished(void* response) {
 }
 
 void setup() {
+        power_adc_disable();
+        power_spi_disable();
         Serial.begin(115200);
         Serial.println("EL-Client starting!");
 
