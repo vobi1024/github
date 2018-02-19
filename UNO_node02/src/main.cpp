@@ -6,17 +6,6 @@
 //#include <AltSoftSerial.h>
 //AltSoftSerial altSerial;
 
-#include <avr/sleep.h>
-void AVRsleep()
-{
-        digitalWrite(LED_BUILTIN, 0);
-        set_sleep_mode(SLEEP_MODE_IDLE); //sleeps for the rest of this millisecond or less if other trigger
-        sleep_enable();
-        sleep_mode();     // put the device to sleep
-        sleep_disable();
-        digitalWrite(LED_BUILTIN, 1);
-}
-
 #include "DHT.h"
 DHT dht;
 #include <Wire.h>
@@ -26,6 +15,8 @@ DHT dht;
 #include <ELClient.h>
 #include <ELClientCmd.h>
 #include <ELClientMqtt.h>
+#include <avr/sleep.h>
+#include <avr/power.h>
 
 float temperature;
 float humidity;
@@ -35,10 +26,6 @@ String hum = "n/a";
 unsigned long previousMillis = 0;
 
 static String nodeID = "node02";
-
-extern String readAltSerial();
-extern void mqttpub(String channel, String msg);
-extern String FloatToString(float value);
 
 bool newData = 0;
 String topic = "";
@@ -51,6 +38,18 @@ String FloatToString(float value)
         char buffer[10];
         String str = dtostrf(value, 5, 2, buffer);
         return str;
+}
+
+void AVRsleep()
+{
+        //digitalWrite(LED_BUILTIN, 0);
+        set_sleep_mode(SLEEP_MODE_IDLE); //sleeps for the rest of this millisecond or less if other trigger
+        sleep_enable();
+        MCUCR |= (1<<BODS) | (1<<BODSE);
+        MCUCR &= ~(1<<BODSE); // must be done right before sleep
+        sleep_mode();     // put the device to sleep
+        sleep_disable();
+        //digitalWrite(LED_BUILTIN, 1);
 }
 
 // Initialize a connection to esp-link using the normal hardware serial port both for
@@ -119,6 +118,8 @@ void mqttPublished(void* response) {
 
 void setup() {
         //wdt_disable();
+        power_adc_disable();
+        power_spi_disable();
         Serial.begin(115200);
         Serial.println("EL-Client starting!");
 
@@ -162,12 +163,12 @@ void loop() {
         // }
 
         every(15000) {
-                //digitalWrite(LED_BUILTIN, 1);
+                digitalWrite(LED_BUILTIN, 1);
                 temp = FloatToString (dht.getTemperature());
                 temp.toCharArray(tempa, 18);
                 hum = FloatToString (dht.getHumidity());
                 hum.toCharArray(huma, 18);
-                //digitalWrite(LED_BUILTIN, 0);
+                digitalWrite(LED_BUILTIN, 0);
         }
 
 

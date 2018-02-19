@@ -134,6 +134,7 @@ void mqttPublished(void* response) {
 }
 
 void setup() {
+        //wdt_disable();
         power_adc_disable();
         power_spi_disable();
         Serial.begin(115200);
