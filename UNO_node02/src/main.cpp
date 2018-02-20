@@ -30,8 +30,15 @@ static String nodeID = "node02";
 bool newData = 0;
 String topic = "";
 String data = "";
-char tempa[18];
-char huma[18];
+//char tempa[18];
+//char huma[18];
+
+char* string2char(String command){
+    if(command.length()!=0){
+        char *p = const_cast<char*>(command.c_str());
+        return p;
+    }
+}
 
 String FloatToString(float value)
 {
@@ -165,26 +172,27 @@ void loop() {
         every(15000) {
                 digitalWrite(LED_BUILTIN, 1);
                 temp = FloatToString (dht.getTemperature());
-                temp.toCharArray(tempa, 18);
+                //temp.toCharArray(tempa, 18);
                 hum = FloatToString (dht.getHumidity());
-                hum.toCharArray(huma, 18);
+                //hum.toCharArray(huma, 18);
                 digitalWrite(LED_BUILTIN, 0);
         }
-
 
         if (newData) {
                 //String rxstr = readAltSerial();
                 if (topic.substring(12, 16) == "tmp1")
                 {
-                        mqtt.publish("/from/node02e/tmp1", tempa);
+                        //mqtt.publish("/from/node02e/tmp1", tempa);
+                        mqtt.publish("/from/node02e/tmp1", string2char(temp), 1);
                         Serial.print("MQTT published: ");
-                        Serial.println(tempa);
+                        Serial.println(temp);
                 }
                 if (topic.substring(12, 16) == "hum1")
                 {
-                        mqtt.publish("/from/node02e/hum1", huma);
+                        //mqtt.publish("/from/node02e/hum1", huma);
+                        mqtt.publish("/from/node02e/hum1", string2char(hum), 1);
                         Serial.print("MQTT published: ");
-                        Serial.println(huma);
+                        Serial.println(hum);
                 }
                 //
                 // if (rxstr.substring(0, 3) == "CMD")
