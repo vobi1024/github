@@ -59,7 +59,7 @@ void setup() {
         //}
         WiFi.begin(ssid, pass);
 
-        client.begin("192.168.1.97", net);
+        client.begin("192.168.1.120", net);
         client.setOptions(10, 1, 2500);
         client.onMessage(messageReceived);
         client.setWill("/from/node00/status", "OFFLINE", 0, 1);
