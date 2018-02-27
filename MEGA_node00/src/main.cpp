@@ -360,13 +360,13 @@ void loop(void) {
                 {
                         setLockState(!lockStatus);
                         //mqttpub("arms", armstate);
-                        mqtt.publish("/from/node00e/arms", string2char(armstate), 1);
+                        //mqtt.publish("/from/node00e/arms", string2char(armstate), 1);
                 }
 
                 if (topic.substring(12, 16) == "arma")
                 {
                         //mqttpub("arms", armstate);
-                        mqtt.publish("/from/node00e/arma", string2char(armstate), 1);
+                        mqtt.publish("/from/node00e/arms", string2char(armstate), 1);
                 }
                 //
                 // if (rxstr.substring(0, 3) == "CMD")
