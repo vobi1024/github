@@ -43,6 +43,8 @@ String data = "";
 //char tempa[18];
 //char huma[18];
 
+bool lockStatus = true;
+
 char* string2char(String command){
         if(command.length()!=0) {
                 char *p = const_cast<char*>(command.c_str());
@@ -119,6 +121,7 @@ bool connected;
 void mqttConnected(void* response) {
         Serial.println("MQTT connected!");
         mqtt.subscribe("/to/node02e/#");
+        mqtt.subscribe("/from/node00e/arms");
         //mqtt.subscribe("/hello/world/#");
         //mqtt.subscribe("/esp-link/2", 1);
         //mqtt.publish("/esp-link/0", "test1");
@@ -154,6 +157,7 @@ void setup() {
         //wdt_disable();
         power_adc_disable();
         power_spi_disable();
+        pinMode(5, INPUT);
         Serial.begin(115200);
         Serial.println("EL-Client starting!");
 
@@ -186,6 +190,7 @@ void setup() {
         sensors.setResolution(tempDeviceAddress, 10);
         sensors.setWaitForConversion(false);
         dht.setup(4);
+        mqtt.publish("/to/node00e/arma", "get", 1);
 }
 
 void loop() {
@@ -200,6 +205,19 @@ void loop() {
         //         previousMillis = currentMillis;
         // }
 
+        every(1000) {
+                digitalWrite(LED_BUILTIN, 1);
+                // if (!lockStatus) digitalWrite(22, !digitalRead(23));
+                // if (lockStatus) digitalWrite(24, !digitalRead(23));
+                if (lockStatus & digitalRead(5)) {
+                        // Serial1.println("Node00,mot1,1,1,Movement detected!"); //Movement detected!
+                        //mqttpub("alm1", "Movement detected!");
+                        Serial.println("Study movement detected!");
+                        mqtt.publish("/from/node02e/alm1", string2char("Study movement detected!"), 1);
+                }
+                digitalWrite(LED_BUILTIN, 0);
+        }
+
         every(15000) {
                 digitalWrite(LED_BUILTIN, 1);
                 temp = FloatToString (dht.getTemperature());
@@ -212,6 +230,24 @@ void loop() {
 
         if (newData) {
                 //String rxstr = readAltSerial();
+                //Serial.println(topic.substring(14, 18));
+                if (topic.substring(14, 18) == "arms")
+                {
+                        if (data == "Disarmed") {
+                                //mqtt.publish("/from/node02e/tmp1", tempa);
+                                //mqtt.publish("/from/node02e/tmp1", string2char(temp), 1);
+                                //Serial.print("MQTT published: ");
+                                Serial.println("node02e Disarmed");
+                                lockStatus = false;
+                        }
+                        if (data == "Armed") {
+                                //mqtt.publish("/from/node02e/tmp1", tempa);
+                                //mqtt.publish("/from/node02e/tmp1", string2char(temp), 1);
+                                //Serial.print("MQTT published: ");
+                                Serial.println("node02e Armed");
+                                lockStatus = true;
+                        }
+                }
                 if (topic.substring(12, 16) == "tmp1")
                 {
                         //mqtt.publish("/from/node02e/tmp1", tempa);
