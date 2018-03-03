@@ -145,6 +145,13 @@ void setLockState(bool state) {
                 armstate = "Disarmed";
                 //mqttpub("arms", armstate);
                 mqtt.publish("/from/node00e/arms", string2char(armstate), 1);
+                  tone(8, 1500, 100);
+                  delay(100);
+                  tone(8, 1000, 100);
+                  delay(100);
+                  tone(8, 500, 100);
+                  delay(100);
+                //noTone(8);
         }
         else
         {
@@ -156,6 +163,12 @@ void setLockState(bool state) {
                 armstate = "Armed";
                 //mqttpub("arms", armstate);
                 mqtt.publish("/from/node00e/arms", string2char(armstate), 1);
+                tone(8, 500, 100);
+                delay(100);
+                tone(8, 1000, 100);
+                delay(100);
+                tone(8, 1500, 100);
+                delay(100);
         }
         EEPROM.write(0, state);
         digitalWrite(22, state);
@@ -187,6 +200,7 @@ String FloatToString(float value)
 //**------------functions end--------------**//
 
 void setup(void) {
+  tone(8, 1000, 500);
         //wdt_disable();
         //pinMode(LED_BUILTIN, OUTPUT);
         pinMode(22, OUTPUT);
