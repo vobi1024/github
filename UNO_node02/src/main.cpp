@@ -6,6 +6,16 @@
 //#include <AltSoftSerial.h>
 //AltSoftSerial altSerial;
 
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#define ONE_WIRE_BUS 2
+
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+DeviceAddress tempDeviceAddress;
+
+char dstemp[18] = "n/a";
+
 #include "DHT.h"
 DHT dht;
 #include <Wire.h>
@@ -34,10 +44,10 @@ String data = "";
 //char huma[18];
 
 char* string2char(String command){
-    if(command.length()!=0){
-        char *p = const_cast<char*>(command.c_str());
-        return p;
-    }
+        if(command.length()!=0) {
+                char *p = const_cast<char*>(command.c_str());
+                return p;
+        }
 }
 
 String FloatToString(float value)
@@ -57,6 +67,23 @@ void AVRsleep()
         sleep_mode();     // put the device to sleep
         sleep_disable();
         //digitalWrite(LED_BUILTIN, 1);
+}
+
+String readDS()
+{
+        digitalWrite(LED_BUILTIN, 1);
+        sensors.requestTemperatures();
+        float tempC = 0;
+        //Serial.println(sensors.getTempCByIndex(0));
+        tempC = sensors.getTempC(tempDeviceAddress);
+        //Serial.println(tempC, 2);
+        char buffer[10];
+        String str = dtostrf(tempC, 5, 2, buffer);
+        if ((tempC > 60) or (tempC < 0)) str = "n/a";
+        digitalWrite(LED_BUILTIN, 0);
+        return str;
+        //tem = ("Node01,tmp1,0," + tem + "\n");
+        //tem.toCharArray(temper, 32);
 }
 
 // Initialize a connection to esp-link using the normal hardware serial port both for
@@ -154,6 +181,10 @@ void setup() {
         Serial.println("EL-MQTT ready");
         //wdt_disable();
         pinMode(LED_BUILTIN, OUTPUT);
+        sensors.begin();
+        sensors.getAddress(tempDeviceAddress, 0);
+        sensors.setResolution(tempDeviceAddress, 10);
+        sensors.setWaitForConversion(false);
         dht.setup(4);
 }
 
@@ -174,6 +205,7 @@ void loop() {
                 temp = FloatToString (dht.getTemperature());
                 //temp.toCharArray(tempa, 18);
                 hum = FloatToString (dht.getHumidity());
+                readDS().toCharArray(dstemp, 18);
                 //hum.toCharArray(huma, 18);
                 digitalWrite(LED_BUILTIN, 0);
         }
@@ -193,6 +225,12 @@ void loop() {
                         mqtt.publish("/from/node02e/hum1", string2char(hum), 1);
                         Serial.print("MQTT published: ");
                         Serial.println(hum);
+                }
+                if (topic.substring(12, 16) == "tmp2")
+                {
+                        mqtt.publish("/from/node02e/tmp2", dstemp);
+                        Serial.print("MQTT published: ");
+                        Serial.println(dstemp);
                 }
                 //
                 // if (rxstr.substring(0, 3) == "CMD")
