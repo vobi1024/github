@@ -407,6 +407,7 @@ void loop(void) {
                                 sensorValue = sensorValue + analogRead(A14);
                         }
                         sensorValue = sensorValue/100.0;
+                        sensorValue = 1024 - sensorValue;
                         mqtt.publish("/from/node00e/lvl1", string2char(FloatToString(sensorValue)), 1);
                         Serial.print("MQTT published: ");
                         Serial.println(sensorValue);
