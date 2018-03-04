@@ -333,12 +333,12 @@ void loop(void) {
                 }
         }
 
-        every(2000) {
-          digitalWrite(LED_BUILTIN, 1);
-          float temperature = dht.getTemperature();
-          temp = FloatToString (temperature-1);
-          hum = FloatToString (dht.getHumidity());
-          digitalWrite(LED_BUILTIN, 0);
+        every(10000) {
+                digitalWrite(LED_BUILTIN, 1);
+                float temperature = dht.getTemperature();
+                temp = FloatToString (temperature-1);
+                hum = FloatToString (dht.getHumidity());
+                digitalWrite(LED_BUILTIN, 0);
         }
 
         if (newData) {
@@ -381,7 +381,7 @@ void loop(void) {
 
                 if (topic.substring(12, 16) == "arq1")
                 {
-                  float sensorValue;
+                        float sensorValue;
                         for(int x = 0; x < 100; x++)
                         {
                                 sensorValue = sensorValue + analogRead(A15);
@@ -394,7 +394,7 @@ void loop(void) {
 
                 if (topic.substring(12, 16) == "lvl1")
                 {
-                  float sensorValue;
+                        float sensorValue;
                         for(int x = 0; x < 100; x++)
                         {
                                 sensorValue = sensorValue + analogRead(A14);
