@@ -386,7 +386,6 @@ void loop(void) {
                 if (topic.substring(12, 16) == "arq1")
                 {
                   float sensorValue;
-                  digitalWrite(LED_BUILTIN, 1);
                         for(int x = 0; x < 100; x++)
                         {
                                 sensorValue = sensorValue + analogRead(A15);
@@ -395,13 +394,11 @@ void loop(void) {
                         mqtt.publish("/from/node00e/arq1", string2char(FloatToString(sensorValue)), 1);
                         Serial.print("MQTT published: ");
                         Serial.println(sensorValue);
-                        digitalWrite(LED_BUILTIN, 0);
                 }
 
                 if (topic.substring(12, 16) == "lvl1")
                 {
                   float sensorValue;
-                  digitalWrite(LED_BUILTIN, 1);
                         for(int x = 0; x < 100; x++)
                         {
                                 sensorValue = sensorValue + analogRead(A14);
@@ -411,7 +408,6 @@ void loop(void) {
                         mqtt.publish("/from/node00e/lvl1", string2char(FloatToString(sensorValue)), 1);
                         Serial.print("MQTT published: ");
                         Serial.println(sensorValue);
-                        digitalWrite(LED_BUILTIN, 0);
                 }
                 //
                 // if (rxstr.substring(0, 3) == "CMD")
