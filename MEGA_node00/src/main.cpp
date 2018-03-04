@@ -145,12 +145,12 @@ void setLockState(bool state) {
                 armstate = "Disarmed";
                 //mqttpub("arms", armstate);
                 mqtt.publish("/from/node00e/arms", string2char(armstate), 1);
-                  tone(8, 1500, 100);
-                  delay(100);
-                  tone(8, 1000, 100);
-                  delay(100);
-                  tone(8, 500, 100);
-                  delay(100);
+                tone(8, 1500, 100);
+                delay(100);
+                tone(8, 1000, 100);
+                delay(100);
+                tone(8, 500, 100);
+                delay(100);
                 //noTone(8);
         }
         else
@@ -200,7 +200,7 @@ String FloatToString(float value)
 //**------------functions end--------------**//
 
 void setup(void) {
-  tone(8, 1000, 500);
+        tone(8, 1000, 500);
         //wdt_disable();
         //pinMode(LED_BUILTIN, OUTPUT);
         pinMode(22, OUTPUT);
@@ -381,6 +381,21 @@ void loop(void) {
                 {
                         //mqttpub("arms", armstate);
                         mqtt.publish("/from/node00e/arms", string2char(armstate), 1);
+                }
+
+                if (topic.substring(12, 16) == "arq1")
+                {
+                  float sensorValue;
+                  digitalWrite(LED_BUILTIN, 1);
+                        for(int x = 0; x < 100; x++)
+                        {
+                                sensorValue = sensorValue + analogRead(A0);
+                        }
+                        sensorValue = sensorValue/100.0;
+                        mqtt.publish("/from/node00e/arq1", string2char(FloatToString(sensorValue)), 1);
+                        Serial.print("MQTT published: ");
+                        Serial.println(sensorValue);
+                        digitalWrite(LED_BUILTIN, 0);
                 }
                 //
                 // if (rxstr.substring(0, 3) == "CMD")
