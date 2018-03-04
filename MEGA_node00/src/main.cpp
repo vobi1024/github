@@ -333,41 +333,37 @@ void loop(void) {
                 }
         }
 
+        every(2000) {
+          digitalWrite(LED_BUILTIN, 1);
+          float temperature = dht.getTemperature();
+          temp = FloatToString (temperature-1);
+          hum = FloatToString (dht.getHumidity());
+          digitalWrite(LED_BUILTIN, 0);
+        }
+
         if (newData) {
                 digitalWrite(LED_BUILTIN, 1);
-                //String rxstr = readAltSerial();
+
                 if (topic.substring(12, 16) == "tmp1")
                 {
-
-                        float temperature = dht.getTemperature();
-                        temp = FloatToString (temperature-1);
-                        //mqtt.publish("/from/node02e/tmp1", tempa);
                         mqtt.publish("/from/node00e/tmp1", string2char(temp), 1);
                         Serial.print("MQTT published: ");
                         Serial.println(temp);
-
                 }
+
                 if (topic.substring(12, 16) == "hum1")
                 {
-                        //mqtt.publish("/from/node02e/hum1", huma);
-
-                        hum = FloatToString (dht.getHumidity());
                         mqtt.publish("/from/node00e/hum1", string2char(hum), 1);
                         Serial.print("MQTT published: ");
                         Serial.println(hum);
-
                 }
+
                 if (topic.substring(12, 16) == "dht1")
                 {
-
-                        float temperature = dht.getTemperature();
-                        temp = FloatToString (temperature-1);
-                        hum = FloatToString (dht.getHumidity());
                         //mqttpub("dht1", temp + ";" + hum);
                         mqtt.publish("/from/node00e/dht1", string2char(temp + ";" + hum), 1);
                         Serial.print("MQTT published: ");
                         Serial.println(temp + ";" + hum);
-
                 }
 
                 if (topic.substring(12, 16) == "arms")
