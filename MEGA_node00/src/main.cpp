@@ -3,8 +3,11 @@
 #undef PN532DEBUGPRINT
 //#include <avr/wdt.h>
 
-#include "DHT.h"
-DHT dht;
+//#include "DHT.h"
+//DHT dht;
+
+#include <Adafruit_BME280.h>
+Adafruit_BME280 bme; // I2C
 
 //#include <printf.h>
 #include <Wire.h>
@@ -50,8 +53,10 @@ String User = "Owner";
 
 float temperature;
 float humidity;
+float pressure;
 String temp = "n/a";
 String hum = "n/a";
+String pres = "n/a";
 String armstate = "n/a";
 
 // Initialize a connection to esp-link using the normal hardware serial port both for
@@ -235,7 +240,14 @@ void setup(void) {
         //wdt_disable();
         pinMode(LED_BUILTIN, OUTPUT);
 
-        dht.setup(4);
+        bool status;
+        status = bme.begin();
+        if (!status) {
+                Serial.println("Could not find a valid BME280 sensor, check wiring!");
+                while (1);
+        }
+
+        //dht.setup(4);
         //Serial.begin(9600);
 
         Serial1.begin(19200);
@@ -335,9 +347,10 @@ void loop(void) {
 
         every(10000) {
                 digitalWrite(LED_BUILTIN, 1);
-                float temperature = dht.getTemperature();
+                float temperature = bme.readTemperature();
                 temp = FloatToString (temperature-1);
-                hum = FloatToString (dht.getHumidity());
+                hum = FloatToString (bme.readHumidity());
+                pres = FloatToString (bme.readPressure() / 100.0F);
                 digitalWrite(LED_BUILTIN, 0);
         }
 
@@ -358,12 +371,12 @@ void loop(void) {
                         Serial.println(hum);
                 }
 
-                if (topic.substring(12, 16) == "dht1")
+                if (topic.substring(12, 16) == "prs1")
                 {
                         //mqttpub("dht1", temp + ";" + hum);
-                        mqtt.publish("/from/node00e/dht1", string2char(temp + ";" + hum), 1);
+                        mqtt.publish("/from/node00e/prs1", string2char(pres), 1);
                         Serial.print("MQTT published: ");
-                        Serial.println(temp + ";" + hum);
+                        Serial.println(pres);
                 }
 
                 if (topic.substring(12, 16) == "arms")
