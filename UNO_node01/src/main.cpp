@@ -23,6 +23,10 @@ DeviceAddress tempDeviceAddress;
 #include <avr/sleep.h>
 #include <avr/power.h>
 
+#include <Adafruit_SSD1306.h>
+#define OLED_RESET 4
+Adafruit_SSD1306 display(OLED_RESET);
+
 //unsigned long previousMillis = 0;
 
 static String nodeID = "node01";
@@ -134,11 +138,21 @@ void mqttPublished(void* response) {
 }
 
 void setup() {
+        display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // initialize with the I2C addr 0x3D (for the 128x64)
+        display.clearDisplay();
+        display.setTextSize(1);
+        display.setTextColor(WHITE);
+        display.setCursor(0, 0);
+        display.print("Initializing");
+        display.display();
         //wdt_disable();
         power_adc_disable();
         power_spi_disable();
         Serial.begin(115200);
         Serial.println("EL-Client starting!");
+
+        display.print(".");
+        display.display();
 
         // Sync-up with esp-link, this is required at the start of any sketch and initializes the
         // callbacks to the wifi status change callback. The callback gets called with the initial
@@ -151,12 +165,18 @@ void setup() {
         } while(!ok);
         Serial.println("EL-Client synced!");
 
+        display.print(".");
+        display.display();
+
         // Set-up callbacks for events and initialize with es-link.
         mqtt.connectedCb.attach(mqttConnected);
         mqtt.disconnectedCb.attach(mqttDisconnected);
         mqtt.publishedCb.attach(mqttPublished);
         mqtt.dataCb.attach(mqttData);
         mqtt.setup();
+
+        display.print(".");
+        display.display();
 
         //Serial.println("ARDUINO: setup mqtt lwt");
         //mqtt.lwt("/lwt", "offline", 0, 0); //or mqtt.lwt("/lwt", "offline");
@@ -168,6 +188,12 @@ void setup() {
         sensors.getAddress(tempDeviceAddress, 0);
         sensors.setResolution(tempDeviceAddress, 10);
         sensors.setWaitForConversion(false);
+
+        display.print("Done");
+        display.display();
+        //display.clearDisplay();
+        display.setTextSize(4);
+        //display.display();
         //while (!Serial) ; // wait for Arduino Serial Monitor to open
         //Serial.println("AltSoftSerial Test Begin");
         //  altSerial.begin(19200);
@@ -190,6 +216,10 @@ void loop() {
         every(10000)
         {
                 readDS().toCharArray(dstemp, 18);
+                display.clearDisplay();
+                display.setCursor(0, 0);
+                display.print(dstemp);
+                display.display();
                 //Serial.print("dstemp: ");
                 //Serial.println(dstemp);
         }
