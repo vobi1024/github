@@ -23,15 +23,17 @@ DeviceAddress tempDeviceAddress;
 #include <avr/sleep.h>
 #include <avr/power.h>
 
-#include <Adafruit_SSD1306.h>
-#define OLED_RESET 4
-Adafruit_SSD1306 display(OLED_RESET);
+//#include <Adafruit_SSD1306.h>
+//#define OLED_RESET 4
+//Adafruit_SSD1306 display(OLED_RESET);
 
 //unsigned long previousMillis = 0;
 
 static String nodeID = "node01";
 
 char dstemp[18] = "n/a";
+
+//float tempCout = 0;
 
 bool newData = 0;
 String topic = "";
@@ -63,11 +65,21 @@ String readDS()
         float tempC = 0;
         //Serial.println(sensors.getTempCByIndex(0));
         tempC = sensors.getTempC(tempDeviceAddress);
+        //tempCout = tempC+8;
         //Serial.println(tempC, 2);
         char buffer[10];
         String str = dtostrf(tempC, 5, 2, buffer);
         if ((tempC > 60) or (tempC < 0)) str = "n/a";
         digitalWrite(LED_BUILTIN, 0);
+        if (tempC > 32) { //((tempC+8) > 36) - 28 LED off, 32 heating off, inc to 42
+                digitalWrite(7, HIGH);
+                digitalWrite(6, LOW);
+        }
+        else
+        {
+                digitalWrite(7, LOW);
+                digitalWrite(6, HIGH);
+        }
         return str;
         //tem = ("Node01,tmp1,0," + tem + "\n");
         //tem.toCharArray(temper, 32);
@@ -138,21 +150,23 @@ void mqttPublished(void* response) {
 }
 
 void setup() {
-        display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // initialize with the I2C addr 0x3D (for the 128x64)
-        display.clearDisplay();
-        display.setTextSize(1);
-        display.setTextColor(WHITE);
-        display.setCursor(0, 0);
-        display.print("Initializing");
-        display.display();
+        pinMode(6, OUTPUT);
+        pinMode(7, OUTPUT);
+        //display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // initialize with the I2C addr 0x3D (for the 128x64)
+        //display.clearDisplay();
+        //display.setTextSize(1);
+        //display.setTextColor(WHITE);
+        //display.setCursor(0, 0);
+        //display.print("Initializing");
+        //display.display();
         //wdt_disable();
         power_adc_disable();
         power_spi_disable();
         Serial.begin(115200);
         Serial.println("EL-Client starting!");
 
-        display.print(".");
-        display.display();
+        //display.print(".");
+        //display.display();
 
         // Sync-up with esp-link, this is required at the start of any sketch and initializes the
         // callbacks to the wifi status change callback. The callback gets called with the initial
@@ -165,8 +179,8 @@ void setup() {
         } while(!ok);
         Serial.println("EL-Client synced!");
 
-        display.print(".");
-        display.display();
+        //display.print(".");
+        //display.display();
 
         // Set-up callbacks for events and initialize with es-link.
         mqtt.connectedCb.attach(mqttConnected);
@@ -175,8 +189,8 @@ void setup() {
         mqtt.dataCb.attach(mqttData);
         mqtt.setup();
 
-        display.print(".");
-        display.display();
+        //display.print(".");
+        //display.display();
 
         //Serial.println("ARDUINO: setup mqtt lwt");
         //mqtt.lwt("/lwt", "offline", 0, 0); //or mqtt.lwt("/lwt", "offline");
@@ -189,10 +203,10 @@ void setup() {
         sensors.setResolution(tempDeviceAddress, 10);
         sensors.setWaitForConversion(false);
 
-        display.print("Done");
-        display.display();
+        //display.print("Done");
+        //display.display();
         //display.clearDisplay();
-        display.setTextSize(4);
+        //display.setTextSize(4);
         //display.display();
         //while (!Serial) ; // wait for Arduino Serial Monitor to open
         //Serial.println("AltSoftSerial Test Begin");
@@ -216,10 +230,11 @@ void loop() {
         every(10000)
         {
                 readDS().toCharArray(dstemp, 18);
-                display.clearDisplay();
-                display.setCursor(0, 0);
-                display.print(dstemp);
-                display.display();
+                //display.clearDisplay();
+                //display.setCursor(0, 0);
+                //display.print(dstemp);
+                //display.print(tempCout);
+                //display.display();
                 //Serial.print("dstemp: ");
                 //Serial.println(dstemp);
         }

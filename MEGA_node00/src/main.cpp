@@ -336,7 +336,8 @@ void loop(void) {
                 digitalWrite(LED_BUILTIN, 1);
                 if (!lockStatus) digitalWrite(22, !digitalRead(23));
                 if (lockStatus) digitalWrite(24, !digitalRead(23));
-                if (lockStatus & digitalRead(23)) {
+                // if (lockStatus & digitalRead(23)) {
+                if (digitalRead(23)) {
                         // Serial1.println("Node00,mot1,1,1,Movement detected!"); //Movement detected!
                         //mqttpub("alm1", "Movement detected!");
                         Serial.println("Movement detected!");
